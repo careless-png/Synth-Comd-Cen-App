@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>SYNTH Command Center</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS VARIABLES ===== */
+:root {
+  --gold: #D4A017;
+  --gold-dim: rgba(212,160,23,0.15);
+  --gold-hover: rgba(212,160,23,0.25);
+  --gold-glow: rgba(212,160,23,0.4);
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-size-body: 16px;
+  --font-size-small: 14px;
+  --font-size-label: 13px;
+  --font-size-h1: 22px;
+  --font-size-h2: 18px;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --tab-height: 56px;
+  --topbar-height: 54px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== DARK THEME (default) ===== */
+[data-theme="dark"] {
+  --bg: #000000;
+  --bg-secondary: #111111;
+  --bg-card: #1A1A1A;
+  --bg-card-hover: #222222;
+  --bg-input: #1A1A1A;
+  --border: #2A2A2A;
+  --text-primary: #F5F5F5;
+  --text-secondary: #8E8E93;
+  --text-dim: #636366;
+  --overlay: rgba(0,0,0,0.7);
+}
+
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F0F0F0;
+  --bg-input: #F5F5F5;
+  --border: #E0E0E0;
+  --text-primary: #0F0F0F;
+  --text-secondary: #6B6B6B;
+  --text-dim: #999999;
+  --overlay: rgba(255,255,255,0.7);
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font-main);
+  font-size: var(--font-size-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* ===== APP SHELL ===== */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100dvh;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  padding-top: calc(var(--safe-top) + 8px);
+  height: calc(var(--topbar-height) + var(--safe-top));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Account Switcher */
+.account-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.account-switcher:active {
+  background: var(--bg-card-hover);
+  transform: scale(0.97);
+}
+
+.account-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+}
+
+.account-name {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.account-chevron {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+
+/* Top bar icon buttons */
+.topbar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 18px;
+}
+
+.topbar-btn:active {
+  transform: scale(0.9);
+  background: var(--bg-card-hover);
+}
+
+.topbar-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+}
+
+.model-toggle {
+  font-size: 11px;
+  font-weight: 700;
+  width: auto;
+  padding: 0 10px;
+  border-radius: 14px;
+  letter-spacing: 0.5px;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 20px);
+}
+
+/* ===== BOTTOM TABS ===== */
+.bottom-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: calc(var(--tab-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 25%;
+  color: var(--text-dim);
+  transition: all var(--transition);
+}
+
+.tab-btn.active {
+  color: var(--gold);
+}
+
+.tab-btn:active {
+  transform: scale(0.9);
+}
+
+.tab-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.tab-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ===== TAB PANELS ===== */
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ===== SECTION HEADERS ===== */
+.section-title {
+  font-size: var(--font-size-h1);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.section-subtitle {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* ===== INPUT ELEMENTS ===== */
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-label {
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+textarea, input[type="text"], input[type="password"], input[type="url"] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: var(--font-size-body);
+  font-family: var(--font-main);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition);
+  -webkit-appearance: none;
+}
+
+textarea {
+  resize: none;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+textarea:focus, input:focus {
+  border-color: var(--gold);
+}
+
+textarea::placeholder, input::placeholder {
+  color: var(--text-dim);
+}
+
+/* ===== MODE CHIPS ===== */
+.mode-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin-bottom: 16px;
+}
+
+.mode-chips::-webkit-scrollbar { display: none; }
+
+.mode-chip {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.mode-chip:active {
+  transform: scale(0.95);
+}
+
+.mode-chip.active {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+  font-weight: 600;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--gold);
+  color: #000;
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.3px;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+  background: var(--bg-card-hover);
+}
+
+/* ===== TWEET CARDS ===== */
+.tweet-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tweet-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.tweet-card:active {
+  background: var(--bg-card-hover);
+}
+
+.tweet-text {
+  font-size: var(--font-size-body);
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.tweet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tweet-char-count {
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.tweet-char-count.warn { color: #FF9500; }
+.tweet-char-count.over { color: #FF3B30; }
+
+.tweet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tweet-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all var(--transition);
+}
+
+.tweet-action-btn:active {
+  transform: scale(0.9);
+}
+
+.tweet-action-btn.copied {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.tweet-action-btn.vaulted {
+  background: rgba(52,199,89,0.15);
+  color: #34C759;
+  border-color: #34C759;
+}
+
+.tweet-action-btn.posted {
+  background: rgba(0,132,255,0.15);
+  color: #0084FF;
+  border-color: #0084FF;
+}
+
+/* ===== CHARACTER COUNTER BAR ===== */
+.char-counter-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.char-counter-bar.visible {
+  display: flex;
+}
+
+.char-counter-ring {
+  width: 24px;
+  height: 24px;
+  position: relative;
+}
+
+.char-counter-ring svg {
+  transform: rotate(-90deg);
+}
+
+.char-counter-ring circle {
+  fill: none;
+  stroke-width: 3;
+}
+
+.char-counter-ring .bg-ring { stroke: var(--border); }
+.char-counter-ring .progress-ring {
+  stroke: var(--gold);
+  transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+}
+.char-counter-ring .progress-ring.warn { stroke: #FF9500; }
+.char-counter-ring .progress-ring.over { stroke: #FF3B30; }
+
+/* ===== LOADING ===== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+/* ===== ACCOUNT DROPDOWN ===== */
+.account-dropdown {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: none;
+}
+
+.account-dropdown.open {
+  display: block;
+}
+
+.account-dropdown-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.account-dropdown-panel {
+  position: absolute;
+  top: calc(var(--topbar-height) + var(--safe-top) + 4px);
+  left: 16px;
+  right: 16px;
+  max-width: 340px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.account-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.account-option:active {
+  background: var(--bg-card-hover);
+}
+
+.account-option.selected {
+  background: var(--gold-dim);
+}
+
+.account-option-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.account-option-avatar.cyntri { background: var(--gold); }
+.account-option-avatar.cmz { background: #4A90D9; }
+.account-option-avatar.neutral { background: var(--text-dim); }
+
+.account-option-info {
+  flex: 1;
+}
+
+.account-option-name {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+}
+
+.account-option-handle {
+  font-size: var(--font-size-label);
+  color: var(--text-secondary);
+}
+
+.account-option-check {
+  color: var(--gold);
+  font-size: 18px;
+}
+
+/* ===== SETTINGS PANEL ===== */
+.settings-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 300;
+  display: none;
+}
+
+.settings-overlay.open {
+  display: block;
+}
+
+.settings-backdrop {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.settings-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  padding: 20px;
+  padding-top: calc(var(--safe-top) + 20px);
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.settings-header h2 {
+  font-size: var(--font-size-h1);
+  font-weight: 700;
+}
+
+.settings-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section-title {
+  font-size: var(--font-size-label);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-name {
+  font-size: var(--font-size-body);
+  font-weight: 500;
+}
+
+.setting-desc {
+  font-size: var(--font-size-label);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  width: 50px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-switch.on {
+  background: var(--gold);
+}
+
+.toggle-switch .toggle-knob {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch.on .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ===== BRIEF CLAUDE PANEL ===== */
+.brief-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 250;
+  display: none;
+}
+
+.brief-overlay.open {
+  display: block;
+}
+
+.brief-backdrop {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.brief-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 75vh;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.brief-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--text-dim);
+  border-radius: 2px;
+  margin: 10px auto;
+}
+
+.brief-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brief-header h3 {
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+}
+
+.brief-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.brief-msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+.brief-msg.user {
+  align-self: flex-end;
+  background: var(--gold);
+  color: #000;
+  border-bottom-right-radius: 4px;
+}
+
+.brief-msg.ai {
+  align-self: flex-start;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+.brief-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  padding-bottom: calc(12px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
+}
+
+.brief-input-row input {
+  flex: 1;
+  border-radius: 22px;
+  padding: 12px 18px;
+}
+
+.brief-send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gold);
+  color: #000;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.brief-send-btn:active {
+  transform: scale(0.9);
+}
+
+/* ===== TOOLS GRID ===== */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tool-card:active {
+  transform: scale(0.95);
+  background: var(--bg-card-hover);
+}
+
+.tool-icon {
+  font-size: 28px;
+}
+
+.tool-name {
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* ===== TOOL SUB-PANELS ===== */
+.tool-subpanel {
+  display: none;
+}
+
+.tool-subpanel.active {
+  display: block;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--gold);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+  font-family: var(--font-main);
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-height) + var(--safe-bottom) + 20px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  z-index: 500;
+  transition: transform 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== SMART SUGGESTION BANNER ===== */
+.suggestion-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--gold-dim);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.suggestion-banner.visible {
+  display: flex;
+}
+
+.suggestion-banner-text {
+  flex: 1;
+  font-size: var(--font-size-small);
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.suggestion-banner-btn {
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  color: #000;
+  background: var(--gold);
+  border: none;
+  border-radius: 14px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+/* ===== DESKTOP LAYOUT ===== */
+@media (min-width: 768px) {
+  .app {
+    flex-direction: row;
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  .desktop-sidebar {
+    display: flex !important;
+    flex-direction: column;
+    width: 260px;
+    height: 100%;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .sidebar-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--font-main);
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: left;
+  }
+
+  .sidebar-nav-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+
+  .sidebar-nav-btn.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .sidebar-nav-btn .nav-icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar-account-switcher {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .sidebar-account-switcher:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .sidebar-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .sidebar-control-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all var(--transition);
+  }
+
+  .sidebar-control-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+
+  .sidebar-control-btn.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .desktop-topbar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .desktop-topbar-title {
+    font-size: var(--font-size-h2);
+    font-weight: 700;
+  }
+
+  .desktop-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .main-content {
+    padding: 24px;
+    padding-bottom: 24px;
+    max-width: 680px;
+  }
+
+  .bottom-tabs {
+    display: none;
+  }
+
+  .tweet-cards {
+    max-width: 600px;
+  }
+}
+
+/* ===== MOBILE: HIDE DESKTOP ELEMENTS ===== */
+@media (max-width: 767px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .desktop-topbar {
+    display: none !important;
+  }
+  .main-wrapper {
+    display: contents;
+  }
+}
+
+/* ===== HAPTIC VISUAL FEEDBACK ===== */
+.haptic {
+  animation: hapticPulse 0.15s ease;
+}
+
+@keyframes hapticPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="app">
+  <!-- ===== MOBILE TOP BAR ===== -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="account-switcher" onclick="toggleAccountDropdown()">
+        <div class="account-avatar" id="currentAvatar">S</div>
+        <span class="account-name" id="currentAccountName">SYNTH</span>
+        <span class="account-chevron">▾</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn model-toggle" id="modelToggle" onclick="toggleModel()">S</button>
+      <button class="topbar-btn" id="briefBtn" onclick="openBrief()">💬</button>
+      <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <button class="topbar-btn" onclick="openSettings()">⚙️</button>
+    </div>
+  </div>
+
+  <!-- ===== DESKTOP SIDEBAR ===== -->
+  <div class="desktop-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">S COMMAND</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-nav-btn active" onclick="switchTab('generate', this)">
+        <span class="nav-icon">✦</span> Generate
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('reply', this)">
+        <span class="nav-icon">↩</span> Reply Sniper
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('quote', this)">
+        <span class="nav-icon">❝</span> Quote Tweet
+      </button>
+      <div style="height:1px;background:var(--border);margin:12px 0;"></div>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool(null)">
+        <span class="nav-icon">⊞</span> Tools
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('threads')">
+        <span class="nav-icon">🧵</span> Thread Builder
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('convo')">
+        <span class="nav-icon">🎯</span> Conversation Joiner
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('formats')">
+        <span class="nav-icon">📋</span> Steal This Format
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('crosspost')">
+        <span class="nav-icon">🔀</span> Cross-Post
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('objection')">
+        <span class="nav-icon">🛡</span> Objection Handler
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('dm')">
+        <span class="nav-icon">✉</span> DM Drafter
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('vault')">
+        <span class="nav-icon">🏦</span> Content Vault
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('screenshot')">
+        <span class="nav-icon">📸</span> Screenshot Gen
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('editor')">
+        <span class="nav-icon">🎨</span> Image Editor
+      </button>
+      <button class="sidebar-nav-btn" onclick="switchTab('tools', this); openTool('video')">
+        <span class="nav-icon">📥</span> Video Download
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-account-switcher" onclick="toggleAccountDropdown()">
+        <div class="account-avatar" id="sidebarAvatar">S</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;" id="sidebarAccountName">SYNTH</div>
+          <div style="font-size:12px;color:var(--text-secondary);" id="sidebarAccountHandle">@SYNTH</div>
+        </div>
+      </div>
+      <div class="sidebar-controls">
+        <button class="sidebar-control-btn active" id="sidebarModelBtn" onclick="toggleModel()">Sonnet</button>
+        <button class="sidebar-control-btn" id="sidebarThemeBtn" onclick="toggleTheme()">🌙 Dark</button>
+        <button class="sidebar-control-btn" onclick="openSettings()">⚙️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN WRAPPER (for desktop flex) ===== -->
+  <div class="main-wrapper">
+    <!-- Desktop top bar -->
+    <div class="desktop-topbar">
+      <div class="desktop-topbar-title" id="desktopTitle">Generate</div>
+      <div class="desktop-topbar-actions">
+        <button class="topbar-btn" onclick="openBrief()">💬 Brief Claude</button>
+        <button class="topbar-btn model-toggle" id="desktopModelToggle" onclick="toggleModel()">S</button>
+      </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT AREA ===== -->
+    <div class="main-content">
+
+      <!-- GENERATE TAB -->
+      <div class="tab-panel active" id="panel-generate">
+        <h1 class="section-title">Generate</h1>
+        <p class="section-subtitle">Create tweets as SYNTH. Leave topic empty for brand-focused content.</p>
+
+        <!-- Free Topic Input -->
+        <div class="input-group">
+          <textarea id="freeTopic" placeholder="Type a topic, paste a link, or leave empty for Cyntri/CMZ content..." rows="3"></textarea>
+        </div>
+
+        <!-- Mode Chips -->
+        <div class="mode-chips" id="generateModes">
+          <button class="mode-chip active" data-mode="mixed" onclick="selectMode(this)">Mixed</button>
+          <button class="mode-chip" data-mode="market" onclick="selectMode(this)">Market</button>
+          <button class="mode-chip" data-mode="milestone" onclick="selectMode(this)">Milestone</button>
+          <button class="mode-chip" data-mode="educational" onclick="selectMode(this)">Educational</button>
+          <button class="mode-chip" data-mode="hot_take" onclick="selectMode(this)">Hot Takes</button>
+          <button class="mode-chip" data-mode="engagement" onclick="selectMode(this)">Engagement</button>
+        </div>
+
+        <!-- Smart Suggestion Banner -->
+        <div class="suggestion-banner" id="opusBanner">
+          <span class="suggestion-banner-text">This might need more horsepower.</span>
+          <button class="suggestion-banner-btn" onclick="switchToOpus()">Switch to Opus</button>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="btn-primary" id="generateBtn" onclick="generateTweets()">
+          Generate Tweets
+        </button>
+
+        <!-- Results -->
+        <div class="tweet-cards" id="generateResults"></div>
+      </div>
+
+      <!-- REPLY TAB -->
+      <div class="tab-panel" id="panel-reply">
+        <h1 class="section-title">Reply Sniper</h1>
+        <p class="section-subtitle">Paste a tweet and get 3 natural replies.</p>
+
+        <div class="input-group">
+          <textarea id="replyInput" placeholder="Paste the tweet you want to reply to..." rows="4"></textarea>
+        </div>
+
+        <button class="btn-primary" id="replyBtn" onclick="generateReplies()">
+          Generate Replies
+        </button>
+
+        <div class="tweet-cards" id="replyResults"></div>
+      </div>
+
+      <!-- QUOTE TAB -->
+      <div class="tab-panel" id="panel-quote">
+        <h1 class="section-title">Quote Tweet</h1>
+        <p class="section-subtitle">Paste a tweet and get quote tweets that add value.</p>
+
+        <div class="input-group">
+          <textarea id="quoteInput" placeholder="Paste the tweet you want to quote..." rows="4"></textarea>
+        </div>
+
+        <button class="btn-primary" id="quoteBtn" onclick="generateQuotes()">
+          Generate Quote Tweets
+        </button>
+
+        <div class="tweet-cards" id="quoteResults"></div>
+      </div>
+
+      <!-- TOOLS TAB -->
+      <div class="tab-panel" id="panel-tools">
+        <!-- Tools Grid (default view) -->
+        <div class="tool-subpanel active" id="toolsGrid">
+          <h1 class="section-title">Tools</h1>
+          <p class="section-subtitle">Everything else you need.</p>
+
+          <div class="tools-grid">
+            <div class="tool-card" onclick="openTool('threads')">
+              <span class="tool-icon">🧵</span>
+              <span class="tool-name">Thread Builder</span>
+            </div>
+            <div class="tool-card" onclick="openTool('convo')">
+              <span class="tool-icon">🎯</span>
+              <span class="tool-name">Conversation Joiner</span>
+            </div>
+            <div class="tool-card" onclick="openTool('formats')">
+              <span class="tool-icon">📋</span>
+              <span class="tool-name">Steal This Format</span>
+            </div>
+            <div class="tool-card" onclick="openTool('crosspost')">
+              <span class="tool-icon">🔀</span>
+              <span class="tool-name">Cross-Post Adapter</span>
+            </div>
+            <div class="tool-card" onclick="openTool('objection')">
+              <span class="tool-icon">🛡</span>
+              <span class="tool-name">Objection Handler</span>
+            </div>
+            <div class="tool-card" onclick="openTool('dm')">
+              <span class="tool-icon">✉️</span>
+              <span class="tool-name">DM Drafter</span>
+            </div>
+            <div class="tool-card" onclick="openTool('vault')">
+              <span class="tool-icon">🏦</span>
+              <span class="tool-name">Content Vault</span>
+            </div>
+            <div class="tool-card" onclick="openTool('screenshot')">
+              <span class="tool-icon">📸</span>
+              <span class="tool-name">Screenshot Gen</span>
+            </div>
+            <div class="tool-card" onclick="openTool('editor')">
+              <span class="tool-icon">🎨</span>
+              <span class="tool-name">Image Editor</span>
+            </div>
+            <div class="tool-card" onclick="openTool('video')">
+              <span class="tool-icon">📥</span>
+              <span class="tool-name">Video Download</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tool Sub-panels (placeholders for Phase 2+) -->
+        <div class="tool-subpanel" id="tool-threads">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Thread Builder</h1>
+          <p class="section-subtitle">Build 5-7 tweet threads. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-convo">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Conversation Joiner</h1>
+          <p class="section-subtitle">Jump into trending conversations. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-formats">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Steal This Format</h1>
+          <p class="section-subtitle">Viral tweet templates. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-crosspost">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Cross-Post Adapter</h1>
+          <p class="section-subtitle">Adapt tweets for other platforms. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-objection">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Objection Handler</h1>
+          <p class="section-subtitle">Handle FUD and criticism. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-dm">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">DM Drafter</h1>
+          <p class="section-subtitle">Draft DM responses. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-vault">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Content Vault</h1>
+          <p class="section-subtitle">Your posted tweets. Coming in Phase 3.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-screenshot">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Tweet Screenshot Generator</h1>
+          <p class="section-subtitle">Create shareable tweet images. Coming in Phase 5.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-editor">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Image Text Overlay Editor</h1>
+          <p class="section-subtitle">Full image editor. Coming in Phase 5.</p>
+        </div>
+        <div class="tool-subpanel" id="tool-video">
+          <button class="back-btn" onclick="openTool(null)">← Back to Tools</button>
+          <h1 class="section-title">Video Downloader</h1>
+          <p class="section-subtitle">Download videos from tweets. Coming in Phase 4.</p>
+        </div>
+      </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end main-wrapper -->
+
+  <!-- ===== MOBILE BOTTOM TABS ===== -->
+  <div class="bottom-tabs">
+    <button class="tab-btn active" onclick="switchTab('generate', this)" data-tab="generate">
+      <span class="tab-icon">✦</span>
+      <span class="tab-label">Generate</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('reply', this)" data-tab="reply">
+      <span class="tab-icon">↩</span>
+      <span class="tab-label">Reply</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('quote', this)" data-tab="quote">
+      <span class="tab-icon">❝</span>
+      <span class="tab-label">Quote</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tools', this)" data-tab="tools">
+      <span class="tab-icon">⊞</span>
+      <span class="tab-label">Tools</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== ACCOUNT DROPDOWN ===== -->
+<div class="account-dropdown" id="accountDropdown">
+  <div class="account-dropdown-overlay" onclick="toggleAccountDropdown()"></div>
+  <div class="account-dropdown-panel" id="accountPanel"></div>
+</div>
+
+<!-- ===== SETTINGS OVERLAY ===== -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-backdrop" onclick="closeSettings()"></div>
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">API Keys</div>
+      <div class="input-group">
+        <label class="input-label">Claude API Key</label>
+        <input type="password" id="claudeKey" placeholder="sk-ant-..." value="">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Supabase URL</label>
+        <input type="url" id="supaUrl" placeholder="https://xxx.supabase.co" value="">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Supabase Anon Key</label>
+        <input type="password" id="supaKey" placeholder="eyJ..." value="">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Account</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">Verified Account (X Premium)</div>
+          <div class="setting-desc">25,000 character limit per tweet</div>
+        </div>
+        <div class="toggle-switch" id="verifiedToggle" onclick="toggleVerified()">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Permanent Context</div>
+      <div class="input-group">
+        <textarea id="permContext" placeholder="Add permanent context that feeds into every generation (e.g. 'Presale date: March 21' or 'New partnership with XYZ')..." rows="5"></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+    <div style="height:40px;"></div>
+  </div>
+</div>
+
+<!-- ===== BRIEF CLAUDE PANEL ===== -->
+<div class="brief-overlay" id="briefOverlay">
+  <div class="brief-backdrop" onclick="closeBrief()"></div>
+  <div class="brief-panel">
+    <div class="brief-handle"></div>
+    <div class="brief-header">
+      <h3>Brief Claude</h3>
+      <button class="settings-close" onclick="closeBrief()">✕</button>
+    </div>
+    <div class="brief-messages" id="briefMessages">
+      <div class="brief-msg ai">Hey! Drop some context — news, updates, links, or ideas. I'll use it when generating your content.</div>
+    </div>
+    <div class="brief-input-row">
+      <input type="text" id="briefInput" placeholder="Type context or ask something..." onkeydown="if(event.key==='Enter')sendBrief()">
+      <button class="brief-send-btn" onclick="sendBrief()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+const STATE = {
+  theme: localStorage.getItem('sc_theme') || 'dark',
+  model: localStorage.getItem('sc_model') || 'sonnet',
+  verified: localStorage.getItem('sc_verified') === 'true',
+  currentAccount: localStorage.getItem('sc_account') || 'synth',
+  currentTab: 'generate',
+  currentMode: 'mixed',
+  briefContext: '',
+  briefHistory: [],
+  accounts: [
+    { id: 'synth', name: 'SYNTH', handle: '@SYNTH', avatar: 'S', type: 'synth', color: '#D4A017' },
+    { id: 'cyntri', name: 'Cyntri AI', handle: '@CyntriAI', avatar: 'C', type: 'cyntri', color: '#D4A017' },
+    { id: 'cmz', name: 'CMZ', handle: '@CryptoMediaZone', avatar: 'M', type: 'cmz', color: '#4A90D9' },
+  ],
+  vault: JSON.parse(localStorage.getItem('sc_vault') || '[]'),
+};
+
+// ===== KNOWLEDGE BASE =====
+const KNOWLEDGE = {
+  synth: `You are SYNTH — founder of Cyntri AI and CryptoMediaZone (CMZ). 
+Personality: Professional, knowledgeable, trustworthy, empathetic, balanced. You sound like a real builder sharing from the trenches. Confident but never arrogant. You back claims with data. You're human — you acknowledge uncertainty, share genuine thoughts, and engage authentically.
+
+Voice rules:
+- No em dashes, no "game-changer", no "excited to announce", no "buckle up"
+- Max 1 emoji per tweet, many with zero
+- No "GM", "wagmi", "ser" clichés
+- Lowercase casual style allowed, contractions, sentence fragments ok
+- Never start 2 tweets the same way
+- Vary structure wildly between tweets
+
+About Cyntri AI:
+- DeFi project building autonomous AI agents for yield optimization and portfolio management
+- Multi-chain: Ethereum, Base at launch. Solana, Arbitrum, Optimism in Q3
+- AI models: TFT (Temporal Fusion Transformer), Helformer, SegRNN for DeFi predictions
+- Multi-agent architecture with risk management engine
+- 100% non-custodial — user keys never leave their wallet
+- $CYNT token: presale March 21, starting price $0.001, 10B total supply, 20% to liquidity
+- XP reward system on cyntriai.org
+- Testnet live with demo agents
+
+About CryptoMediaZone (CMZ):
+- Crypto entertainment and education platform at cryptomediazone.com
+- Features: hack databases, exchange graveyards, FUD hall of fame
+- Deep-dive articles on crypto events and controversies
+- Gold-themed rebrand recently completed
+- Hosted on GitHub Pages
+
+Knowledge areas: DeFi, yield farming, Web2/Web3, crypto markets, AI/ML, blockchain technology, smart contracts, liquidity protocols, risk management`,
+
+  cyntri: `You are the official @CyntriAI account. Voice: professional but not corporate. Clean, confident, data-driven. Use 1 emoji max. Focus on product capabilities and results. Sound like a serious AI company.
+
+About Cyntri AI:
+- Autonomous AI agents for DeFi yield optimization and portfolio management
+- Multi-chain: Ethereum, Base at launch. Solana, Arbitrum, Optimism in Q3
+- AI models: TFT, Helformer, SegRNN
+- Non-custodial architecture
+- $CYNT token presale March 21, $0.001, 10B supply
+- Website: cyntriai.org`,
+
+  cmz: `You are the CryptoMediaZone account. Voice: informative, entertaining, slightly edgy. You cover the wild side of crypto — hacks, collapses, controversies, and the stories behind them. Educational but engaging.
+
+About CMZ:
+- Crypto entertainment and education platform
+- Features: hack databases, exchange graveyards, FUD hall of fame
+- Deep-dive articles on crypto events
+- Website: cryptomediazone.com`,
+
+  neutral: `You are a helpful tweet writing assistant. Write in the user's voice based on their custom context. Keep tweets natural, engaging, and authentic. No brand promotion unless specifically asked.`
+};
+
+// ===== INIT =====
+function init() {
+  document.body.setAttribute('data-theme', STATE.theme);
+  updateThemeBtn();
+  updateModelBtn();
+  updateAccountUI();
+  loadSettings();
+}
+
+// ===== THEME =====
+function toggleTheme() {
+  STATE.theme = STATE.theme === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', STATE.theme);
+  localStorage.setItem('sc_theme', STATE.theme);
+  updateThemeBtn();
+  haptic();
+}
+
+function updateThemeBtn() {
+  const btn = document.getElementById('themeBtn');
+  const sidebarBtn = document.getElementById('sidebarThemeBtn');
+  if (STATE.theme === 'dark') {
+    btn.textContent = '🌙';
+    if (sidebarBtn) sidebarBtn.innerHTML = '🌙 Dark';
+  } else {
+    btn.textContent = '☀️';
+    if (sidebarBtn) sidebarBtn.innerHTML = '☀️ Light';
+  }
+}
+
+// ===== MODEL =====
+function toggleModel() {
+  STATE.model = STATE.model === 'sonnet' ? 'opus' : 'sonnet';
+  localStorage.setItem('sc_model', STATE.model);
+  updateModelBtn();
+  haptic();
+  showToast(STATE.model === 'opus' ? 'Switched to Opus' : 'Switched to Sonnet');
+}
+
+function updateModelBtn() {
+  const label = STATE.model === 'sonnet' ? 'S' : 'O';
+  const fullLabel = STATE.model === 'sonnet' ? 'Sonnet' : 'Opus';
+  document.getElementById('modelToggle').textContent = label;
+  const dt = document.getElementById('desktopModelToggle');
+  if (dt) dt.textContent = label;
+  const sb = document.getElementById('sidebarModelBtn');
+  if (sb) {
+    sb.textContent = fullLabel;
+    sb.classList.toggle('active', STATE.model === 'opus');
+  }
+}
+
+function switchToOpus() {
+  STATE.model = 'opus';
+  localStorage.setItem('sc_model', STATE.model);
+  updateModelBtn();
+  document.getElementById('opusBanner').classList.remove('visible');
+  showToast('Switched to Opus');
+  haptic();
+}
+
+// ===== TABS =====
+function switchTab(tabId, btn) {
+  STATE.currentTab = tabId;
+
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tabId).classList.add('active');
+
+  // Update mobile tabs
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.tab-btn[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+
+  // Update sidebar
+  document.querySelectorAll('.sidebar-nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn && btn.classList.contains('sidebar-nav-btn')) {
+    btn.classList.add('active');
+  }
+
+  // Update desktop title
+  const titles = { generate: 'Generate', reply: 'Reply Sniper', quote: 'Quote Tweet', tools: 'Tools' };
+  const dt = document.getElementById('desktopTitle');
+  if (dt) dt.textContent = titles[tabId] || 'Tools';
+
+  // Scroll to top
+  document.querySelector('.main-content').scrollTop = 0;
+  haptic();
+}
+
+// ===== MODE SELECTION =====
+function selectMode(chip) {
+  document.querySelectorAll('#generateModes .mode-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  STATE.currentMode = chip.dataset.mode;
+  haptic();
+}
+
+// ===== ACCOUNT SWITCHER =====
+function toggleAccountDropdown() {
+  const dd = document.getElementById('accountDropdown');
+  dd.classList.toggle('open');
+
+  if (dd.classList.contains('open')) {
+    const panel = document.getElementById('accountPanel');
+    panel.innerHTML = STATE.accounts.map(acc => `
+      <div class="account-option ${acc.id === STATE.currentAccount ? 'selected' : ''}" onclick="selectAccount('${acc.id}')">
+        <div class="account-option-avatar" style="background:${acc.color}">${acc.avatar}</div>
+        <div class="account-option-info">
+          <div class="account-option-name">${acc.name}</div>
+          <div class="account-option-handle">${acc.handle}</div>
+        </div>
+        ${acc.id === STATE.currentAccount ? '<span class="account-option-check">✓</span>' : ''}
+      </div>
+    `).join('');
+  }
+}
+
+function selectAccount(id) {
+  STATE.currentAccount = id;
+  localStorage.setItem('sc_account', id);
+  updateAccountUI();
+  toggleAccountDropdown();
+  haptic();
+  showToast(`Switched to ${STATE.accounts.find(a => a.id === id).name}`);
+}
+
+function updateAccountUI() {
+  const acc = STATE.accounts.find(a => a.id === STATE.currentAccount);
+  if (!acc) return;
+
+  document.getElementById('currentAvatar').textContent = acc.avatar;
+  document.getElementById('currentAvatar').style.background = acc.color;
+  document.getElementById('currentAccountName').textContent = acc.name;
+
+  const sa = document.getElementById('sidebarAvatar');
+  if (sa) {
+    sa.textContent = acc.avatar;
+    sa.style.background = acc.color;
+  }
+  const sn = document.getElementById('sidebarAccountName');
+  if (sn) sn.textContent = acc.name;
+  const sh = document.getElementById('sidebarAccountHandle');
+  if (sh) sh.textContent = acc.handle;
+}
+
+// ===== TOOLS GRID =====
+function openTool(toolId) {
+  document.querySelectorAll('#panel-tools .tool-subpanel').forEach(p => p.classList.remove('active'));
+  if (toolId) {
+    const panel = document.getElementById('tool-' + toolId);
+    if (panel) panel.classList.add('active');
+  } else {
+    document.getElementById('toolsGrid').classList.add('active');
+  }
+}
+
+// ===== SETTINGS =====
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function saveSettings() {
+  const data = {
+    claudeKey: document.getElementById('claudeKey').value,
+    supaUrl: document.getElementById('supaUrl').value,
+    supaKey: document.getElementById('supaKey').value,
+    permContext: document.getElementById('permContext').value,
+  };
+  localStorage.setItem('sc_settings', JSON.stringify(data));
+  showToast('Settings saved');
+  closeSettings();
+  haptic();
+}
+
+function loadSettings() {
+  try {
+    const data = JSON.parse(localStorage.getItem('sc_settings') || '{}');
+    if (data.claudeKey) document.getElementById('claudeKey').value = data.claudeKey;
+    if (data.supaUrl) document.getElementById('supaUrl').value = data.supaUrl;
+    if (data.supaKey) document.getElementById('supaKey').value = data.supaKey;
+    if (data.permContext) document.getElementById('permContext').value = data.permContext;
+    if (STATE.verified) document.getElementById('verifiedToggle').classList.add('on');
+  } catch(e) {}
+}
+
+function toggleVerified() {
+  STATE.verified = !STATE.verified;
+  localStorage.setItem('sc_verified', STATE.verified);
+  document.getElementById('verifiedToggle').classList.toggle('on');
+  haptic();
+}
+
+// ===== BRIEF CLAUDE =====
+function openBrief() {
+  document.getElementById('briefOverlay').classList.add('open');
+  document.getElementById('briefInput').focus();
+}
+
+function closeBrief() {
+  document.getElementById('briefOverlay').classList.remove('open');
+}
+
+async function sendBrief() {
+  const input = document.getElementById('briefInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const container = document.getElementById('briefMessages');
+
+  // Add user message
+  container.innerHTML += `<div class="brief-msg user">${escapeHtml(text)}</div>`;
+  input.value = '';
+  container.scrollTop = container.scrollHeight;
+
+  // Store context
+  STATE.briefContext += '\n' + text;
+  STATE.briefHistory.push({ role: 'user', content: text });
+
+  // Get AI response
+  const settings = JSON.parse(localStorage.getItem('sc_settings') || '{}');
+  if (!settings.claudeKey) {
+    container.innerHTML += `<div class="brief-msg ai">I need your Claude API key first. Add it in Settings (gear icon).</div>`;
+    container.scrollTop = container.scrollHeight;
+    return;
+  }
+
+  container.innerHTML += `<div class="brief-msg ai" id="briefLoading"><div class="spinner" style="width:20px;height:20px;border-width:2px;"></div></div>`;
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 500,
+        system: `You are a briefing assistant for SYNTH. The user is giving you context, updates, or asking questions about their content strategy. Keep responses brief and useful. Acknowledge the context and confirm you'll use it.`,
+        messages: STATE.briefHistory
+      })
+    });
+
+    const data = await resp.json();
+    const aiText = data.content?.[0]?.text || 'Got it, I\'ll use this context.';
+    STATE.briefHistory.push({ role: 'assistant', content: aiText });
+
+    document.getElementById('briefLoading').remove();
+    container.innerHTML += `<div class="brief-msg ai">${escapeHtml(aiText)}</div>`;
+  } catch(e) {
+    document.getElementById('briefLoading')?.remove();
+    container.innerHTML += `<div class="brief-msg ai">Something went wrong. Check your API key in settings.</div>`;
+  }
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// ===== GENERATE TWEETS =====
+async function generateTweets() {
+  const settings = JSON.parse(localStorage.getItem('sc_settings') || '{}');
+  if (!settings.claudeKey) {
+    showToast('Add your Claude API key in Settings');
+    openSettings();
+    return;
+  }
+
+  const btn = document.getElementById('generateBtn');
+  const results = document.getElementById('generateResults');
+  const freeTopic = document.getElementById('freeTopic').value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  results.innerHTML = `<div class="loading-container"><div class="spinner"></div><div class="loading-text">Crafting tweets with ${STATE.model === 'opus' ? 'Opus' : 'Sonnet'}...</div></div>`;
+
+  // Check if we should suggest Opus
+  if (STATE.model === 'sonnet' && freeTopic.length > 500) {
+    document.getElementById('opusBanner').classList.add('visible');
+  }
+
+  const acc = STATE.accounts.find(a => a.id === STATE.currentAccount);
+  const knowledge = KNOWLEDGE[acc.type] || KNOWLEDGE.neutral;
+  const permContext = document.getElementById('permContext')?.value || '';
+  const charLimit = STATE.verified ? 25000 : 280;
+
+  const modeInstructions = {
+    mixed: 'Generate 4 tweets in DIFFERENT styles: 1) casual observation, 2) data/insight highlight, 3) market/industry reaction, 4) engagement question or hot take.',
+    market: 'Generate 4 tweets reacting to current market conditions or crypto/AI industry trends.',
+    milestone: 'Generate 4 tweets celebrating or highlighting project milestones, progress, or achievements.',
+    educational: 'Generate 4 educational tweets explaining concepts related to DeFi, AI agents, yield farming, or blockchain technology.',
+    hot_take: 'Generate 4 bold, opinionated tweets about DeFi, AI, or crypto that position the author as a thought leader.',
+    engagement: 'Generate 4 tweets designed to get replies — questions, debates, "what would you do" scenarios.'
+  };
+
+  const vaultSample = STATE.vault.slice(-10).map(t => t.text).join('\n---\n');
+
+  const systemPrompt = `${knowledge}
+
+${permContext ? 'PERMANENT CONTEXT:\n' + permContext : ''}
+${STATE.briefContext ? 'RECENT BRIEFING CONTEXT:\n' + STATE.briefContext : ''}
+${vaultSample ? 'RECENT POSTED TWEETS (avoid similar content):\n' + vaultSample : ''}
+
+RULES:
+- Each tweet must be under ${charLimit} characters
+- Return ONLY a JSON array of 4 tweet strings, nothing else
+- No markdown, no code blocks, no explanation
+- Example: ["tweet 1", "tweet 2", "tweet 3", "tweet 4"]`;
+
+  const userMessage = freeTopic
+    ? `Topic/context: ${freeTopic}\n\n${modeInstructions[STATE.currentMode]}`
+    : modeInstructions[STATE.currentMode];
+
+  try {
+    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '[]';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const tweets = JSON.parse(cleaned);
+
+    results.innerHTML = '';
+    tweets.forEach((tweet, i) => {
+      results.innerHTML += createTweetCard(tweet, i);
+    });
+
+  } catch(e) {
+    results.innerHTML = `<div class="loading-container"><div class="loading-text" style="color:#FF3B30;">Error: ${e.message}. Check your API key.</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate Tweets';
+}
+
+// ===== GENERATE REPLIES =====
+async function generateReplies() {
+  const settings = JSON.parse(localStorage.getItem('sc_settings') || '{}');
+  if (!settings.claudeKey) { showToast('Add your Claude API key in Settings'); openSettings(); return; }
+
+  const input = document.getElementById('replyInput').value.trim();
+  if (!input) { showToast('Paste a tweet first'); return; }
+
+  const btn = document.getElementById('replyBtn');
+  const results = document.getElementById('replyResults');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  results.innerHTML = `<div class="loading-container"><div class="spinner"></div><div class="loading-text">Crafting replies...</div></div>`;
+
+  const acc = STATE.accounts.find(a => a.id === STATE.currentAccount);
+  const knowledge = KNOWLEDGE[acc.type] || KNOWLEDGE.neutral;
+  const charLimit = STATE.verified ? 25000 : 280;
+
+  try {
+    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 1000,
+        system: `${knowledge}\n\nYou are writing replies to another person's tweet. Generate 3 natural replies:\n1) Agree & add value — build on their point with insight\n2) Respectful challenge — offer a different perspective\n3) Show expertise — demonstrate deep knowledge on the topic\n\nEach reply must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 reply strings, nothing else.`,
+        messages: [{ role: 'user', content: `Reply to this tweet:\n\n"${input}"` }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '[]';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const replies = JSON.parse(cleaned);
+
+    const labels = ['Agree & Add', 'Challenge', 'Show Expertise'];
+    results.innerHTML = '';
+    replies.forEach((reply, i) => {
+      results.innerHTML += createTweetCard(reply, i, labels[i]);
+    });
+
+  } catch(e) {
+    results.innerHTML = `<div class="loading-container"><div class="loading-text" style="color:#FF3B30;">Error: ${e.message}</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate Replies';
+}
+
+// ===== GENERATE QUOTES =====
+async function generateQuotes() {
+  const settings = JSON.parse(localStorage.getItem('sc_settings') || '{}');
+  if (!settings.claudeKey) { showToast('Add your Claude API key in Settings'); openSettings(); return; }
+
+  const input = document.getElementById('quoteInput').value.trim();
+  if (!input) { showToast('Paste a tweet first'); return; }
+
+  const btn = document.getElementById('quoteBtn');
+  const results = document.getElementById('quoteResults');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  results.innerHTML = `<div class="loading-container"><div class="spinner"></div><div class="loading-text">Crafting quote tweets...</div></div>`;
+
+  const acc = STATE.accounts.find(a => a.id === STATE.currentAccount);
+  const knowledge = KNOWLEDGE[acc.type] || KNOWLEDGE.neutral;
+  const charLimit = STATE.verified ? 25000 : 280;
+
+  try {
+    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 1000,
+        system: `${knowledge}\n\nYou are writing quote tweets. Generate 3 quote tweets that add value on top of the original:\n1) Add insight/data — bring new information to the conversation\n2) Hot take — bold opinion that will get engagement\n3) Connect to your work — naturally tie it to what you're building\n\nEach must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 strings, nothing else.`,
+        messages: [{ role: 'user', content: `Quote tweet this:\n\n"${input}"` }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '[]';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const quotes = JSON.parse(cleaned);
+
+    const labels = ['Add Insight', 'Hot Take', 'Connect'];
+    results.innerHTML = '';
+    quotes.forEach((quote, i) => {
+      results.innerHTML += createTweetCard(quote, i, labels[i]);
+    });
+
+  } catch(e) {
+    results.innerHTML = `<div class="loading-container"><div class="loading-text" style="color:#FF3B30;">Error: ${e.message}</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate Quote Tweets';
+}
+
+// ===== TWEET CARD BUILDER =====
+function createTweetCard(text, index, label) {
+  const charLimit = STATE.verified ? 25000 : 280;
+  const count = text.length;
+  const pct = (count / charLimit) * 100;
+  let countClass = '';
+  if (pct > 95) countClass = 'over';
+  else if (pct > 80) countClass = 'warn';
+
+  return `
+    <div class="tweet-card" id="card-${index}">
+      ${label ? `<div style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">${label}</div>` : ''}
+      <div class="tweet-text">${escapeHtml(text)}</div>
+      <div class="tweet-footer">
+        <span class="tweet-char-count ${countClass}">${count}/${charLimit}</span>
+        <div class="tweet-actions">
+          <button class="tweet-action-btn" onclick="copyTweet(this, '${encodeURIComponent(text)}')" title="Copy">📋</button>
+          <button class="tweet-action-btn" onclick="vaultTweet(this, '${encodeURIComponent(text)}')" title="Save to Vault">✓</button>
+          <button class="tweet-action-btn" onclick="shareTweet('${encodeURIComponent(text)}')" title="Share">↗</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===== ACTIONS =====
+function copyTweet(btn, encodedText) {
+  const text = decodeURIComponent(encodedText);
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    showToast('Copied to clipboard');
+    haptic();
+    setTimeout(() => btn.classList.remove('copied'), 2000);
+  });
+}
+
+function vaultTweet(btn, encodedText) {
+  const text = decodeURIComponent(encodedText);
+  const entry = { text, date: new Date().toISOString(), account: STATE.currentAccount };
+  STATE.vault.push(entry);
+  localStorage.setItem('sc_vault', JSON.stringify(STATE.vault));
+  btn.classList.add('vaulted');
+  showToast('Saved to Vault');
+  haptic();
+}
+
+function shareTweet(encodedText) {
+  const text = decodeURIComponent(encodedText);
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text);
+    showToast('Copied — share sheet not available on desktop');
+  }
+  haptic();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ===== HAPTIC =====
+function haptic() {
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+// ===== UTIL =====
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== INIT =====
+init();
+</script>
+
+</body>
+</html>
