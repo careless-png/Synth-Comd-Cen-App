@@ -25,9 +25,9 @@
   --font-size-h2: 18px;
   --radius: 14px;
   --radius-sm: 10px;
-  --tab-height: 56px;
+  --tab-height: 70px;
   --topbar-height: 54px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 24px);
   --safe-top: env(safe-area-inset-top, 0px);
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -194,7 +194,7 @@ html, body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 16px;
-  padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 20px);
+  padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 40px);
 }
 
 /* ===== BOTTOM TABS ===== */
@@ -203,7 +203,7 @@ html, body {
   align-items: center;
   justify-content: space-around;
   height: calc(var(--tab-height) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  padding-bottom: calc(var(--safe-bottom) + 8px);
   background: var(--bg);
   border-top: 1px solid var(--border);
   z-index: 100;
@@ -234,12 +234,12 @@ html, body {
 }
 
 .tab-icon {
-  font-size: 22px;
+  font-size: 26px;
   line-height: 1;
 }
 
 .tab-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
@@ -446,8 +446,8 @@ textarea::placeholder, input::placeholder {
 }
 
 .tweet-action-btn {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--bg);
@@ -456,8 +456,10 @@ textarea::placeholder, input::placeholder {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   transition: all var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .tweet-action-btn:active {
@@ -856,8 +858,8 @@ textarea::placeholder, input::placeholder {
   max-width: 85%;
   padding: 12px 16px;
   border-radius: 18px;
-  font-size: var(--font-size-body);
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .brief-msg.user {
@@ -1898,12 +1900,12 @@ async function sendBrief() {
   container.scrollTop = container.scrollHeight;
 
   try {
-    const data = await callClaude(settings, `You are a briefing assistant for SYNTH. The user is giving you context, updates, or asking questions about their content strategy. Keep responses brief and useful. Acknowledge the context and confirm you'll use it.`, STATE.briefHistory, 500);
+    const data = await callClaude(settings, `You are a briefing assistant for SYNTH. The user is giving you context, updates, or asking questions about their content strategy. Keep responses brief and useful. Acknowledge the context and confirm you'll use it. IMPORTANT: Do not use markdown formatting like #, ##, **, or bullet lists. Write in plain conversational text.`, STATE.briefHistory, 500);
     const aiText = data.content?.[0]?.text || 'Got it, I\'ll use this context.';
     STATE.briefHistory.push({ role: 'assistant', content: aiText });
 
     document.getElementById('briefLoading').remove();
-    container.innerHTML += `<div class="brief-msg ai">${escapeHtml(aiText)}</div>`;
+    container.innerHTML += `<div class="brief-msg ai">${renderBriefMarkdown(aiText)}</div>`;
   } catch(e) {
     document.getElementById('briefLoading')?.remove();
     container.innerHTML += `<div class="brief-msg ai">Something went wrong. Check your API key in settings.</div>`;
@@ -2010,6 +2012,7 @@ RULES:
     const tweets = JSON.parse(cleaned);
 
     results.innerHTML = '';
+    generatedTweets = tweets;
     tweets.forEach((tweet, i) => {
       results.innerHTML += createTweetCard(tweet, i);
     });
@@ -2048,6 +2051,7 @@ async function generateReplies() {
 
     const labels = ['Agree & Add', 'Challenge', 'Show Expertise'];
     results.innerHTML = '';
+    generatedTweets = replies;
     replies.forEach((reply, i) => {
       results.innerHTML += createTweetCard(reply, i, labels[i]);
     });
@@ -2086,6 +2090,7 @@ async function generateQuotes() {
 
     const labels = ['Add Insight', 'Hot Take', 'Connect'];
     results.innerHTML = '';
+    generatedTweets = quotes;
     quotes.forEach((quote, i) => {
       results.innerHTML += createTweetCard(quote, i, labels[i]);
     });
@@ -2107,6 +2112,8 @@ function createTweetCard(text, index, label) {
   if (pct > 95) countClass = 'over';
   else if (pct > 80) countClass = 'warn';
 
+  const safeText = text.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
   return `
     <div class="tweet-card" id="card-${index}">
       ${label ? `<div style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">${label}</div>` : ''}
@@ -2114,45 +2121,72 @@ function createTweetCard(text, index, label) {
       <div class="tweet-footer">
         <span class="tweet-char-count ${countClass}">${count}/${charLimit}</span>
         <div class="tweet-actions">
-          <button class="tweet-action-btn" onclick="copyTweet(this, '${encodeURIComponent(text)}')" title="Copy">📋</button>
-          <button class="tweet-action-btn" onclick="vaultTweet(this, '${encodeURIComponent(text)}')" title="Save to Vault">✓</button>
-          <button class="tweet-action-btn" onclick="shareTweet('${encodeURIComponent(text)}')" title="Share">↗</button>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <button class="tweet-action-btn" data-action="copy" data-index="${index}" title="Copy">📋</button>
+            <span style="font-size:10px;color:var(--text-dim);">Copy</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <button class="tweet-action-btn" data-action="vault" data-index="${index}" title="Posted">✓</button>
+            <span style="font-size:10px;color:var(--text-dim);">Posted</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <button class="tweet-action-btn" data-action="share" data-index="${index}" title="Share">↗</button>
+            <span style="font-size:10px;color:var(--text-dim);">Share</span>
+          </div>
         </div>
       </div>
     </div>`;
 }
 
-// ===== ACTIONS =====
-function copyTweet(btn, encodedText) {
-  const text = decodeURIComponent(encodedText);
-  navigator.clipboard.writeText(text).then(() => {
-    btn.classList.add('copied');
-    showToast('Copied to clipboard');
+// Store generated tweets for button actions
+let generatedTweets = [];
+
+// Event delegation for tweet action buttons (fixes mobile touch issues)
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.tweet-action-btn');
+  if (!btn) return;
+  
+  const action = btn.dataset.action;
+  const index = parseInt(btn.dataset.index);
+  const text = generatedTweets[index];
+  if (!text) return;
+
+  if (action === 'copy') {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      showToast('Copied to clipboard');
+      haptic();
+      setTimeout(() => btn.classList.remove('copied'), 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.classList.add('copied');
+      showToast('Copied to clipboard');
+      haptic();
+      setTimeout(() => btn.classList.remove('copied'), 2000);
+    });
+  } else if (action === 'vault') {
+    const entry = { text, date: new Date().toISOString(), account: STATE.currentAccount };
+    STATE.vault.push(entry);
+    localStorage.setItem('sc_vault', JSON.stringify(STATE.vault));
+    btn.classList.add('vaulted');
+    showToast('Saved to Vault');
     haptic();
-    setTimeout(() => btn.classList.remove('copied'), 2000);
-  });
-}
-
-function vaultTweet(btn, encodedText) {
-  const text = decodeURIComponent(encodedText);
-  const entry = { text, date: new Date().toISOString(), account: STATE.currentAccount };
-  STATE.vault.push(entry);
-  localStorage.setItem('sc_vault', JSON.stringify(STATE.vault));
-  btn.classList.add('vaulted');
-  showToast('Saved to Vault');
-  haptic();
-}
-
-function shareTweet(encodedText) {
-  const text = decodeURIComponent(encodedText);
-  if (navigator.share) {
-    navigator.share({ text }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(text);
-    showToast('Copied — share sheet not available on desktop');
+  } else if (action === 'share') {
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      showToast('Copied — share sheet not available');
+    }
+    haptic();
   }
-  haptic();
-}
+});
 
 // ===== TOAST =====
 function showToast(msg) {
@@ -2172,6 +2206,17 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function renderBriefMarkdown(text) {
+  return escapeHtml(text)
+    .replace(/^### (.+)$/gm, '<strong>$1</strong>')
+    .replace(/^## (.+)$/gm, '<strong>$1</strong>')
+    .replace(/^# (.+)$/gm, '<strong>$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '• $1')
+    .replace(/\n/g, '<br>');
 }
 
 // ===== INIT =====
