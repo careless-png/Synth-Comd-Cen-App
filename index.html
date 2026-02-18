@@ -2192,8 +2192,14 @@ document.addEventListener('click', function(e) {
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
+  toast.classList.remove('show');
+  // Force reflow to restart animation
+  void toast.offsetWidth;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
 }
 
 // ===== HAPTIC =====
