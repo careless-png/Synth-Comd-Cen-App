@@ -1916,7 +1916,7 @@ async function sendBrief() {
 const SUPABASE_PROXY_URL = 'https://cqwvjfvprbgiwsbjdtfo.supabase.co/functions/v1/claude-proxy';
 
 async function callClaude(settings, system, messages, maxTokens) {
-  const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+  const modelId = STATE.model === 'opus' ? 'claude-opus-4-6' : 'claude-sonnet-4-5-20250929';
   
   const resp = await fetch(SUPABASE_PROXY_URL, {
     method: 'POST',
@@ -1935,10 +1935,18 @@ async function callClaude(settings, system, messages, maxTokens) {
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `API returned ${resp.status}`);
+    throw new Error(err.error?.message || err.error || JSON.stringify(err) || `API returned ${resp.status}`);
   }
 
-  return await resp.json();
+  const data = await resp.json();
+  
+  // Check if Claude returned an error
+  if (data.type === 'error' || data.error) {
+    const msg = data.error?.message || data.error || 'Unknown API error';
+    throw new Error(msg);
+  }
+
+  return data;
 }
 
 // ===== GENERATE TWEETS =====
