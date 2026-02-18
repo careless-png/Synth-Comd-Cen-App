@@ -1898,19 +1898,7 @@ async function sendBrief() {
   container.scrollTop = container.scrollHeight;
 
   try {
-    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: modelId,
-        max_tokens: 500,
-        system: `You are a briefing assistant for SYNTH. The user is giving you context, updates, or asking questions about their content strategy. Keep responses brief and useful. Acknowledge the context and confirm you'll use it.`,
-        messages: STATE.briefHistory
-      })
-    });
-
-    const data = await resp.json();
+    const data = await callClaude(settings, `You are a briefing assistant for SYNTH. The user is giving you context, updates, or asking questions about their content strategy. Keep responses brief and useful. Acknowledge the context and confirm you'll use it.`, STATE.briefHistory, 500);
     const aiText = data.content?.[0]?.text || 'Got it, I\'ll use this context.';
     STATE.briefHistory.push({ role: 'assistant', content: aiText });
 
@@ -1922,6 +1910,35 @@ async function sendBrief() {
   }
 
   container.scrollTop = container.scrollHeight;
+}
+
+// ===== CLAUDE API (via Supabase proxy) =====
+const SUPABASE_PROXY_URL = 'https://cqwvjfvprbgiwsbjdtfo.supabase.co/functions/v1/claude-proxy';
+
+async function callClaude(settings, system, messages, maxTokens) {
+  const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
+  
+  const resp = await fetch(SUPABASE_PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-claude-key': settings.claudeKey,
+      'Authorization': 'Bearer ' + (settings.supaKey || ''),
+    },
+    body: JSON.stringify({
+      model: modelId,
+      max_tokens: maxTokens,
+      system: system,
+      messages: messages
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `API returned ${resp.status}`);
+  }
+
+  return await resp.json();
 }
 
 // ===== GENERATE TWEETS =====
@@ -1979,19 +1996,7 @@ RULES:
     : modeInstructions[STATE.currentMode];
 
   try {
-    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: modelId,
-        max_tokens: 1500,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }]
-      })
-    });
-
-    const data = await resp.json();
+    const data = await callClaude(settings, systemPrompt, [{ role: 'user', content: userMessage }], 1500);
     const raw = data.content?.[0]?.text || '[]';
     const cleaned = raw.replace(/```json|```/g, '').trim();
     const tweets = JSON.parse(cleaned);
@@ -2028,19 +2033,7 @@ async function generateReplies() {
   const charLimit = STATE.verified ? 25000 : 280;
 
   try {
-    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: modelId,
-        max_tokens: 1000,
-        system: `${knowledge}\n\nYou are writing replies to another person's tweet. Generate 3 natural replies:\n1) Agree & add value — build on their point with insight\n2) Respectful challenge — offer a different perspective\n3) Show expertise — demonstrate deep knowledge on the topic\n\nEach reply must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 reply strings, nothing else.`,
-        messages: [{ role: 'user', content: `Reply to this tweet:\n\n"${input}"` }]
-      })
-    });
-
-    const data = await resp.json();
+    const data = await callClaude(settings, `${knowledge}\n\nYou are writing replies to another person's tweet. Generate 3 natural replies:\n1) Agree & add value — build on their point with insight\n2) Respectful challenge — offer a different perspective\n3) Show expertise — demonstrate deep knowledge on the topic\n\nEach reply must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 reply strings, nothing else.`, [{ role: 'user', content: `Reply to this tweet:\n\n"${input}"` }], 1000);
     const raw = data.content?.[0]?.text || '[]';
     const cleaned = raw.replace(/```json|```/g, '').trim();
     const replies = JSON.parse(cleaned);
@@ -2078,19 +2071,7 @@ async function generateQuotes() {
   const charLimit = STATE.verified ? 25000 : 280;
 
   try {
-    const modelId = STATE.model === 'opus' ? 'claude-opus-4-5-20250514' : 'claude-sonnet-4-5-20250514';
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': settings.claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: modelId,
-        max_tokens: 1000,
-        system: `${knowledge}\n\nYou are writing quote tweets. Generate 3 quote tweets that add value on top of the original:\n1) Add insight/data — bring new information to the conversation\n2) Hot take — bold opinion that will get engagement\n3) Connect to your work — naturally tie it to what you're building\n\nEach must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 strings, nothing else.`,
-        messages: [{ role: 'user', content: `Quote tweet this:\n\n"${input}"` }]
-      })
-    });
-
-    const data = await resp.json();
+    const data = await callClaude(settings, `${knowledge}\n\nYou are writing quote tweets. Generate 3 quote tweets that add value on top of the original:\n1) Add insight/data — bring new information to the conversation\n2) Hot take — bold opinion that will get engagement\n3) Connect to your work — naturally tie it to what you're building\n\nEach must be under ${charLimit} characters.\nReturn ONLY a JSON array of 3 strings, nothing else.`, [{ role: 'user', content: `Quote tweet this:\n\n"${input}"` }], 1000);
     const raw = data.content?.[0]?.text || '[]';
     const cleaned = raw.replace(/```json|```/g, '').trim();
     const quotes = JSON.parse(cleaned);
